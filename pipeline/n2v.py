@@ -6,11 +6,11 @@ from torch.optim import Adam
 from torch.nn import NLLLoss
 
 class Node2VecModel(torch.nn.Module):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, lr=0.01, **kwargs):
         super(Node2VecModel, self).__init__()
         self.model = Node2Vec(*args, **kwargs)
         
-        self.optimizer = Adam(self.model.parameters(), lr=0.01)
+        self.optimizer = Adam(self.model.parameters(), lr=lr)
 
     def forward(self, data):
         return self.model(data)

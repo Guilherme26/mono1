@@ -35,11 +35,11 @@ def get_y(user_to_label, users):
     return torch.tensor(y, dtype=torch.long)
 
 
-def get_models(n_nodes, input_dim, output_dim, n_hidden_units, device='cpu'):
-    models = [# Node2VecModel(n_nodes, embedding_dim=n_hidden_units, walk_length=20, context_size=10, walks_per_node=10), 
-              GCNModel(input_dim, n_hidden_units, output_dim),
-              GATModel(input_dim, n_hidden_units, output_dim), 
-              GraphSAGE(input_dim, n_hidden_units, output_dim)]
+def get_models(n_nodes, input_dim, output_dim, n_hidden_units, device='cpu', lr=0.01):
+    models = [#Node2VecModel(n_nodes, embedding_dim=n_hidden_units, walk_length=20, context_size=10, walks_per_node=10, lr=lr), 
+              GCNModel(input_dim, n_hidden_units, output_dim, lr=lr),
+              GATModel(input_dim, n_hidden_units, output_dim, lr=lr), 
+              GraphSAGE(input_dim, n_hidden_units, output_dim, lr=lr)]
     
     return [model.to(device) for model in models]
 

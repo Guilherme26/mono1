@@ -8,21 +8,21 @@ from torch.nn import NLLLoss
 
 
 class GCNModel(torch.nn.Module):
-    def __init__(self, n_features, n_hidden_units, n_classes, **kwargs):
+    def __init__(self, n_features, n_hidden_units, n_classes, lr=0.01, **kwargs):
         super(GCNModel, self).__init__()
         self.conv1 = GCNConv(n_features, n_hidden_units, cached=True)
         self.conv2 = GCNConv(n_hidden_units, n_classes, cached=True)
         
         self.loss = NLLLoss()
-        self.optimizer = Adam(self.parameters(), lr=0.01, weight_decay=5e-4)
+        self.optimizer = Adam(self.parameters(), lr=lr, weight_decay=5e-4)
 
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, apply_activation=True):
         x = F.relu(self.conv1(x, edge_index))
         x = F.dropout(x, training=self.training)
         x = self.conv2(x, edge_index)
         
-        return F.log_softmax(x, dim=1)
+        return F.log_softmax(x, dim=1) if apply_activation else x
     
     def fit(self, data, epochs=10):
         self.train()
