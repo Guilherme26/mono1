@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
+from sklearn.metrics import f1_score, accuracy_score
 from n2v import Node2VecModel
 from gcn import GCNModel
 from gat import GATModel
@@ -55,4 +56,13 @@ def train(data, models, epochs=10):
         
 
 def test(data, models):
-    pass
+    metrics_per_model = {}
+    for model in models:
+        model.eval()
+        y_pred = torch.argmax(model.forward(data.x, data.edge_index), dim=1).detach().numpy()
+        y_true = data.y.detach().numpy()
+        metrics_per_model[model.__class__.__name__] = {"Accuracy": accuracy_score(y_true, y_pred), 
+                                                       "F1 Macro": f1_score(y_true, y_pred, average="macro"),
+                                                       "F1 Micro": f1_score(y_true, y_pred, average="micro")}
+
+    return metrics_per_model

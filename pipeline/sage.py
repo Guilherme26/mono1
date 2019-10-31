@@ -16,7 +16,7 @@ class GraphSAGE(torch.nn.Module):
         self.optimizer = Adam(self.parameters(), lr=lr, weight_decay=5e-4)
     
     def forward(self, x, edge_index, apply_activation=True):
-        x = F.relu(self.conv1(x, edge_index))
+        x = self.conv1(x, edge_index)
         return F.log_softmax(x, dim=1) if apply_activation else x
     
     def fit(self, data, epochs=10):
