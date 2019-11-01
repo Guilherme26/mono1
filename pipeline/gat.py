@@ -22,7 +22,8 @@ class GATModel(torch.nn.Module):
     
     def fit(self, data, epochs=10):
         self.train()
-        for _ in range(epochs):
+        history = []
+        for epoch in range(epochs):
             self.optimizer.zero_grad()
             
             outputs = self.forward(data.x, data.edge_index)
@@ -30,4 +31,7 @@ class GATModel(torch.nn.Module):
             loss.backward()
             
             self.optimizer.step()
-            print("GAT running loss is: {}".format(loss.item()))
+            print("---> ({}/{}) Running loss: {}".format(epoch+1, epochs, loss.item()))
+            history.append(loss.item())
+
+        return history

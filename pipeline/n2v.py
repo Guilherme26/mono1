@@ -18,7 +18,8 @@ class Node2VecModel(torch.nn.Module):
     def fit(self, data, epochs=10):
         data_loader = DataLoader(torch.arange(data.num_nodes), batch_size=64, shuffle=True)
         self.train()
-        for _ in range(epochs):
+        history = []
+        for epoch in range(epochs):
             running_loss = 0.0
             for subset in data_loader:
                 self.optimizer.zero_grad()
@@ -28,4 +29,7 @@ class Node2VecModel(torch.nn.Module):
                 
                 running_loss += loss.item()
             
-            print("Node2Vec running loss is: {}".format(running_loss / len(subset)))
+            print("---> ({}/{}) Running loss: {}".format(epoch+1, epochs, running_loss / len(subset)))
+            history.append(running_loss / len(subset))
+
+        return history

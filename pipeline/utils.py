@@ -1,8 +1,10 @@
 import torch
+import json
 import pandas as pd
 import numpy as np
 import networkx as nx
 
+from collections import defaultdict
 from sklearn.metrics import f1_score, accuracy_score
 from n2v import Node2VecModel
 from gcn import GCNModel
@@ -50,9 +52,13 @@ def get_users_indices(authors):
 
 
 def train(data, models, epochs=10):
+    train_traces = dict()
     for model in models:
-        model.fit(data, epochs=epochs)
-        print("Treinou o Modelo {}".format(model))
+        print("-> Beggining {}'s Training Process".format(model.__class__.__name__))
+        train_traces[model.__class__.__name__] = model.fit(data, epochs=epochs)
+        print('!=============================================================!')
+
+    return train_traces
         
 
 def test(data, models):
@@ -72,3 +78,23 @@ def update_metrics_dict(models_metrics, new_execution_dict):
     for model in new_execution_dict.keys():
         for metric in new_execution_dict[model].keys():
             models_metrics[model][metric] = models_metrics[model].get(metric, []) + [new_execution_dict[model][metric]]
+
+
+def update_histories(models_histories, new_histories):
+    for model, _ in new_histories.items():
+        if not models_histories[model]:
+            models_histories[model] = np.array(new_histories[model])
+        else:
+            models_histories[model] += np.array(new_histories[model])
+    
+    return models_histories
+
+
+def calculate_statistics(models_metrics):
+    return {model: {metric: (np.mean(values), np.std(values)) for metric, values in metrics.items()} 
+                for model, metrics in models_metrics.items()}
+
+
+def write_json(file_name, dictionary):
+    with open(file_name, 'w') as fp:
+        json.dump(dictionary, fp)

@@ -21,10 +21,14 @@ class GraphSAGE(torch.nn.Module):
     
     def fit(self, data, epochs=10):
         self.train()
-        for _ in range(epochs):
+        history = []
+        for epoch in range(epochs):
             outputs = self.forward(data.x, data.edge_index)
             loss = self.loss(outputs, data.y)
             loss.backward()
             
             self.optimizer.step()
-            print("GraphSAGE running loss is: {}".format(loss.item()))
+            print("---> ({}/{}) Running loss: {}".format(epoch+1, epochs, loss.item()))
+            history.append(loss.item())
+
+        return history
