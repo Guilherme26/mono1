@@ -45,7 +45,7 @@ def main():
     K = 5
     skf = StratifiedKFold(n_splits=K)
     models_metrics, models_histories = defaultdict(dict), defaultdict(list)
-    for kth_fold, (train_idx, test_idx) in enumerate(skf.split(profiles.profile_username.values, profiles.category_1.values)):
+    for kth_fold, (train_idx, test_idx) in enumerate(skf.split(profiles.profile_username.values, profiles.category_1.values), start=1):
         print("Starting {}th Fold".format(kth_fold))
 
         train_authors, test_authors = utils.get_authors(profiles, all_users, train_idx, test_idx)

@@ -82,10 +82,10 @@ def update_metrics_dict(models_metrics, new_execution_dict):
 
 def update_histories(models_histories, new_histories):
     for model, _ in new_histories.items():
-        if not models_histories[model]:
-            models_histories[model] = np.array(new_histories[model])
-        else:
+        if list(models_histories[model]):
             models_histories[model] += np.array(new_histories[model])
+        else:
+            models_histories[model] = np.array(new_histories[model])
     
     return models_histories
 
