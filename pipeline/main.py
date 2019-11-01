@@ -35,43 +35,45 @@ def main():
     user_to_label = {user: category for user, category in profiles[["profile_username", "category_1"]].values}
 
     skf = StratifiedKFold(n_splits=5)
-    for n_hidden_units in [64]:#[64, 128, 256]:
-        print("Fez of preprocessamento")
-        for train_idx, test_idx in skf.split(profiles.profile_username.values, profiles.category_1.values):
-            train_authors, test_authors = utils.get_authors(profiles, all_users, train_idx, test_idx)
 
-            print("Pegou autores")
+    n_hidden_units = 64
+    print("Fez of preprocessamento")
+    models_metrics = defaultdict(dict)
+    for train_idx, test_idx in skf.split(profiles.profile_username.values, profiles.category_1.values):
+        train_authors, test_authors = utils.get_authors(profiles, all_users, train_idx, test_idx)
 
-            username_to_index = utils.get_users_indices(train_authors)
-            print("Pegou indices")
-            train_interactions = utils.get_interactions(comments[(comments.media_author.isin(train_authors)) 
-                                                            & (comments.commenter.isin(train_authors))], username_to_index)
-            print("Pegou interações")
-            x_train, y_train = utils.get_x(train_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, train_authors)
-            print("Pegou x e y")
-            assert len(x_train)==len(y_train), "Train Input and Output tensor do not have the same dimensions"
+        print("Pegou autores")
+
+        username_to_index = utils.get_users_indices(train_authors)
+        print("Pegou indices")
+        train_interactions = utils.get_interactions(comments[(comments.media_author.isin(train_authors)) 
+                                                        & (comments.commenter.isin(train_authors))], username_to_index)
+        print("Pegou interações")
+        x_train, y_train = utils.get_x(train_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, train_authors)
+        print("Pegou x e y")
+        assert len(x_train)==len(y_train), "Train Input and Output tensor do not have the same dimensions"
 
 
-            edge_index = utils.get_edge_index(train_interactions)
-            print("Pegou os indices de arestas")
-            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-            data = Data(x=x_train, y=y_train, edge_index=edge_index).to(device)
-            print("Criou Data")
+        edge_index = utils.get_edge_index(train_interactions)
+        print("Pegou os indices de arestas")
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        data = Data(x=x_train, y=y_train, edge_index=edge_index).to(device)
+        print("Criou Data")
 
-            models = utils.get_models(data.num_nodes, input_dim, output_dim, n_hidden_units, device=device, lr=0.005)
-            print("Criou modelos")
+        models = utils.get_models(data.num_nodes, input_dim, output_dim, n_hidden_units, device=device, lr=0.005)
+        print("Criou modelos")
 
-            utils.train(data, models, epochs=15)
+        utils.train(data, models, epochs=1)
 
-            username_to_index = utils.get_users_indices(test_authors)
-            test_interactions = utils.get_interactions(comments[(comments.media_author.isin(test_authors)) 
-                                                            & (comments.commenter.isin(test_authors))], username_to_index)
-            x_test, y_test = utils.get_x(test_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, test_authors)
-            assert len(x_test)==len(y_test), "Test Input and Output tensor do not have the same dimensions"
+        username_to_index = utils.get_users_indices(test_authors)
+        test_interactions = utils.get_interactions(comments[(comments.media_author.isin(test_authors)) 
+                                                        & (comments.commenter.isin(test_authors))], username_to_index)
+        x_test, y_test = utils.get_x(test_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, test_authors)
+        assert len(x_test)==len(y_test), "Test Input and Output tensor do not have the same dimensions"
 
-            edge_index = utils.get_edge_index(test_interactions)
-            data = Data(x=x_test, y=y_test, edge_index=edge_index).to(device)
-            utils.test(data, models)
+        edge_index = utils.get_edge_index(test_interactions)
+        data = Data(x=x_test, y=y_test, edge_index=edge_index).to(device)
+        utils.update_metrics_dict(models_metrics, utils.test(data, models))
 
 if __name__ == "__main__":
     main()

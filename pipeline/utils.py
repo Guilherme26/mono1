@@ -61,8 +61,14 @@ def test(data, models):
         model.eval()
         y_pred = torch.argmax(model.forward(data.x, data.edge_index), dim=1).detach().numpy()
         y_true = data.y.detach().numpy()
-        metrics_per_model[model.__class__.__name__] = {"Accuracy": accuracy_score(y_true, y_pred), 
-                                                       "F1 Macro": f1_score(y_true, y_pred, average="macro"),
-                                                       "F1 Micro": f1_score(y_true, y_pred, average="micro")}
+        metrics_per_model[model.__class__.__name__] = {"Accuracy": float(accuracy_score(y_true, y_pred)), 
+                                                       "F1 Macro": float(f1_score(y_true, y_pred, average="macro")),
+                                                       "F1 Micro": float(f1_score(y_true, y_pred, average="micro"))}
 
     return metrics_per_model
+
+
+def update_metrics_dict(models_metrics, new_execution_dict):
+    for model in new_execution_dict.keys():
+        for metric in new_execution_dict[model].keys():
+            models_metrics[model][metric] = models_metrics[model].get(metric, []) + [new_execution_dict[model][metric]]
