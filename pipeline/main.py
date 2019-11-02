@@ -13,10 +13,12 @@ from collections import defaultdict
 def main():
     parser = argparse.ArgumentParser(description="Available Parameters:")
     parser.add_argument("--n_hidden_units", default=64, type=int)
-    parser.add_argument("--train_epochs", default=100, type=int)
+    parser.add_argument("--train_epochs", nargs='+', default=100, type=int)
     parser.add_argument("--relevance_threshold", default=30, type=int)
     parser.add_argument("--write_output", default=True, type=bool)
     args = parser.parse_args()
+
+    args.train_epochs = args.train_epochs[0] if len(args.train_epochs) == 1 else args.train_epochs
 
     torch.manual_seed(0)
     np.random.seed(0)
@@ -80,8 +82,8 @@ def main():
     models_metrics = utils.calculate_statistics(models_metrics)
 
     if args.write_output:
-        utils.write_json("models_metrics.json", models_metrics)
-        utils.write_json("models_histories.json", models_histories)
+        utils.write_json("results/models_metrics_1_{}.json".format(args.n_hidden_units), models_metrics)
+        utils.write_json("results/models_histories_1_{}.json".format(args.n_hidden_units), models_histories)
 
 if __name__ == "__main__":
     main()

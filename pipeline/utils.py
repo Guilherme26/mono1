@@ -39,8 +39,7 @@ def get_y(user_to_label, users):
 
 
 def get_models(n_nodes, input_dim, output_dim, n_hidden_units, device='cpu', lr=0.01):
-    models = [#Node2VecModel(n_nodes, embedding_dim=n_hidden_units, walk_length=20, context_size=10, walks_per_node=10, lr=lr), 
-              GCNModel(input_dim, n_hidden_units, output_dim, lr=lr),
+    models = [GCNModel(input_dim, n_hidden_units, output_dim, lr=lr),
               GATModel(input_dim, n_hidden_units, output_dim, lr=lr), 
               GraphSAGE(input_dim, n_hidden_units, output_dim, lr=lr)]
     
@@ -52,10 +51,13 @@ def get_users_indices(authors):
 
 
 def train(data, models, epochs=10):
+    if type(epochs) is int:
+        epochs = len(models) * [epochs]
+
     train_traces = dict()
-    for model in models:
+    for model, n_epochs in zip(models, epochs):
         print("-> Beggining {}'s Training Process".format(model.__class__.__name__))
-        train_traces[model.__class__.__name__] = model.fit(data, epochs=epochs)
+        train_traces[model.__class__.__name__] = model.fit(data, epochs=n_epochs)
         print('!=============================================================!')
 
     return train_traces
