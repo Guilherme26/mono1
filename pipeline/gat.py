@@ -8,16 +8,21 @@ from torch.nn import NLLLoss
 
 
 class GATModel(torch.nn.Module):
-    def __init__(self, n_features, n_hidden_units, n_classes, lr=0.01):
+    def __init__(self, n_features, n_hidden_units, n_classes, lr=0.01, n_hidden_layers=1):
         super(GATModel, self).__init__()
-        self.conv1 = GATConv(n_features, n_classes, heads=8, dropout=0.6)
-        
+        self.convs = [GATConv(n_features, n_hidden_units, heads=8)] + [GATConv(8*n_hidden_units, n_hidden_units, heads=8) for _ in range(n_hidden_layers-1)]
+        self.convs = torch.nn.Sequential(*self.convs)
+        self.output = GATConv(8*n_hidden_units, n_classes, heads=8)
+
         self.loss = NLLLoss()
         self.optimizer = Adam(self.parameters(), lr=lr, weight_decay=5e-4)
 
     def forward(self, x, edge_index, apply_activation=True):
-        x = F.dropout(x, p=0.6, training=self.training)
-        x = self.conv1(x, edge_index)        
+        for layer in self.convs:
+            x = F.dropout(x, p=0.2, training=self.training)
+            x = F.relu(layer(x, edge_index))
+        x = self.output(x, edge_index)
+
         return F.log_softmax(x, dim=1) if apply_activation else x
     
     def fit(self, data, epochs=10):

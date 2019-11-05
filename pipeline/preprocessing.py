@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 def categorical_to_numerical(df, col):
     categories = df[col].value_counts().index
@@ -19,3 +20,7 @@ def filter_by_relevance(comments, profiles, minimum_freq=30):
             relevant_users.append(user)
             
     return comments[comments.commenter.isin(relevant_users)]
+
+
+def scale(data):
+    return MinMaxScaler().fit_transform(data)

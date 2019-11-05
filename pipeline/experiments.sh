@@ -1,5 +1,9 @@
 #!/bin/bash
 
-for i in 64 128 256; do
-    python3 main.py --n_hidden_units ${i} --train_epochs 300 --relevance_threshold 35
+for epochs in 25 50 100; do
+    for embedding in 64 128 256; do
+        for n_layers in 1 2 3; do
+            python3 main.py --n_hidden_units ${embedding} --train_epochs ${epochs} --n_hidden_layers ${n_layers} --relevance_threshold 50
+        done
+    done
 done

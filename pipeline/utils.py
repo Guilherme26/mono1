@@ -38,10 +38,10 @@ def get_y(user_to_label, users):
     return torch.tensor(y, dtype=torch.long)
 
 
-def get_models(n_nodes, input_dim, output_dim, n_hidden_units, device='cpu', lr=0.01):
-    models = [GCNModel(input_dim, n_hidden_units, output_dim, lr=lr),
-              GATModel(input_dim, n_hidden_units, output_dim, lr=lr), 
-              GraphSAGE(input_dim, n_hidden_units, output_dim, lr=lr)]
+def get_models(n_nodes, input_dim, output_dim, n_hidden_units, n_hidden_layers, device='cpu', lr=0.01):
+    models = [GCNModel(input_dim, n_hidden_units, output_dim, lr=lr, n_hidden_layers=n_hidden_layers),
+              GATModel(input_dim, n_hidden_units, output_dim, lr=lr, n_hidden_layers=n_hidden_layers), 
+              GraphSAGE(input_dim, n_hidden_units, output_dim, lr=lr, n_hidden_layers=n_hidden_layers)]
     
     return [model.to(device) for model in models]
 
@@ -51,13 +51,10 @@ def get_users_indices(authors):
 
 
 def train(data, models, epochs=10):
-    if type(epochs) is int:
-        epochs = len(models) * [epochs]
-
     train_traces = dict()
-    for model, n_epochs in zip(models, epochs):
+    for model in models:
         print("-> Beggining {}'s Training Process".format(model.__class__.__name__))
-        train_traces[model.__class__.__name__] = model.fit(data, epochs=n_epochs)
+        train_traces[model.__class__.__name__] = model.fit(data, epochs=epochs)
         print('!=============================================================!')
 
     return train_traces
@@ -69,6 +66,9 @@ def test(data, models):
         model.eval()
         y_pred = torch.argmax(model.forward(data.x, data.edge_index), dim=1).detach().numpy()
         y_true = data.y.detach().numpy()
+        
+        print(f1_score(y_true, y_pred, average="macro"), set(y_true) - set(y_pred))
+        
         metrics_per_model[model.__class__.__name__] = {"Accuracy": float(accuracy_score(y_true, y_pred)), 
                                                        "F1 Macro": float(f1_score(y_true, y_pred, average="macro")),
                                                        "F1 Micro": float(f1_score(y_true, y_pred, average="micro"))}

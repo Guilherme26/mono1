@@ -8,15 +8,20 @@ from torch.nn import NLLLoss
 
 
 class GraphSAGE(torch.nn.Module):
-    def __init__(self, n_features, n_hidden_units, n_classes, lr=0.01):
+    def __init__(self, n_features, n_hidden_units, n_classes, lr=0.01, n_hidden_layers=1):
         super(GraphSAGE, self).__init__()
-        self.conv1 = SAGEConv(n_features, n_classes)
+        self.convs = [SAGEConv(n_features, n_hidden_units)] + [SAGEConv(n_hidden_units, n_hidden_units) for _ in range(n_hidden_layers-1)]
+        self.convs = torch.nn.Sequential(*self.convs)
+        self.output = SAGEConv(n_hidden_units, n_classes)
         
         self.loss = NLLLoss()
         self.optimizer = Adam(self.parameters(), lr=lr, weight_decay=5e-4)
     
     def forward(self, x, edge_index, apply_activation=True):
-        x = self.conv1(x, edge_index)
+        for layer in self.convs:
+            x = F.relu(layer(x, edge_index))
+        x = self.output(x, edge_index)
+        
         return F.log_softmax(x, dim=1) if apply_activation else x
     
     def fit(self, data, epochs=10):
