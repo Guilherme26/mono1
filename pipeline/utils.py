@@ -18,8 +18,9 @@ def get_interactions(df, username_to_index):
 
 
 def get_authors(df, all_users, train_idx, test_idx):
-    train_users = list(all_users - set(df.iloc[test_idx].profile_username.values))
-    return train_users, df.iloc[test_idx].profile_username.values
+    test_users = df.iloc[test_idx].profile_username.values
+    train_users = list(all_users - set(test_users))
+    return train_users, test_users
 
 
 def get_edge_index(interactions):

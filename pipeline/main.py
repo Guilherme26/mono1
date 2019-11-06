@@ -22,14 +22,12 @@ def main():
     np.random.seed(0)
 
     profiles = pd.read_csv("../data/new_profiles.csv")
-    comments = pd.read_csv("../data/comments.csv", usecols=["media_short_code", "media_author", "commenter"])
+    comments = pd.read_csv("../data/new_comments.csv")
 
-    profiles = preprocessing.categorical_to_numerical(profiles, col="category_1")
     comments = comments.drop_duplicates()
-    comments = preprocessing.filter_by_relevance(comments, profiles)
+    profiles = preprocessing.categorical_to_numerical(profiles, col="category_1")
+    all_users = set(profiles.profile_username.values)
 
-
-    all_users = profiles.profile_username.values
     data = preprocessing.scale(profiles.drop(columns=["category_1", "profile_username"]).values)
     name_to_record = {name: record for name, record in zip(all_users, data)}
 
@@ -39,13 +37,13 @@ def main():
     K = 5
     skf = StratifiedKFold(n_splits=K)
     models_metrics, models_histories = defaultdict(dict), defaultdict(list)
-    tracked_profiles = profiles[profiles.is_tracked == 1]
-    for kth_fold, (train_idx, test_idx) in enumerate(skf.split(tracked_profiles.profile_username.values, tracked_profiles.category_1.values), start=1):
+    for kth_fold, (train_idx, test_idx) in enumerate(skf.split(profiles.profile_username.values, profiles.category_1.values), start=1):
         print("Starting {}th Fold".format(kth_fold))
 
         train_authors, test_authors = utils.get_authors(profiles, all_users, train_idx, test_idx)
         username_to_index = utils.get_users_indices(train_authors)
-        train_interactions = utils.get_interactions(comments[comments.media_author.isin(train_authors)], username_to_index)
+        train_interactions = utils.get_interactions(comments[(comments.media_author.isin(train_authors)) 
+                                                        & (comments.commenter.isin(train_authors))], username_to_index)
         x_train, y_train = utils.get_x(train_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, train_authors)
         assert len(x_train)==len(y_train), "Train Input and Output tensor do not have the same dimensions"
 
@@ -58,7 +56,8 @@ def main():
         models_histories = utils.update_histories(models_histories, histories)
 
         username_to_index = utils.get_users_indices(test_authors)
-        test_interactions = utils.get_interactions(comments[comments.media_author.isin(test_authors)], username_to_index)
+        test_interactions = utils.get_interactions(comments[(comments.media_author.isin(test_authors)) 
+                                                        & (comments.commenter.isin(test_authors))], username_to_index)
         x_test, y_test = utils.get_x(test_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, test_authors)
         assert len(x_test)==len(y_test), "Test Input and Output tensor do not have the same dimensions"
 
