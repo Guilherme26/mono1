@@ -15,31 +15,23 @@ def main():
     parser.add_argument("--n_hidden_units", default=64, type=int)
     parser.add_argument("--n_hidden_layers", default=1, type=int)
     parser.add_argument("--train_epochs", default=100, type=int)
-    parser.add_argument("--relevance_threshold", default=30, type=int)
     parser.add_argument("--write_output", default=True, type=bool)
     args = parser.parse_args()
 
     torch.manual_seed(0)
     np.random.seed(0)
 
-    profiles = pd.read_csv("../data/profiles.csv", usecols=["profile_username", "profile_followed_by", "profile_follow", 
-                                                            "medias_nb", "comments_nb", "comments_commenters_nb", 
-                                                            "comments_self_nb", "category_1"])
+    profiles = pd.read_csv("../data/new_profiles.csv")
     comments = pd.read_csv("../data/comments.csv", usecols=["media_short_code", "media_author", "commenter"])
 
     profiles = preprocessing.categorical_to_numerical(profiles, col="category_1")
     comments = comments.drop_duplicates()
-    comments = preprocessing.filter_by_relevance(comments, profiles, minimum_freq=args.relevance_threshold)
+    comments = preprocessing.filter_by_relevance(comments, profiles)
 
-    known_users = profiles.profile_username.unique().tolist()
-    followers = comments.commenter.unique().tolist()
-    all_users = set(known_users + followers)
 
-    names = profiles.profile_username.values
-    data = profiles[["profile_followed_by", "profile_follow", "medias_nb", 
-                    "comments_nb", "comments_commenters_nb", "comments_self_nb"]].values
-    data = preprocessing.scale(data)
-    name_to_record = {name: record for name, record in zip(names, data)}
+    all_users = profiles.profile_username.values
+    data = preprocessing.scale(profiles.drop(columns=["category_1", "profile_username"]).values)
+    name_to_record = {name: record for name, record in zip(all_users, data)}
 
     input_dim, output_dim = data.shape[1], len(profiles.category_1.unique()) + 1
     user_to_label = {user: category for user, category in profiles[["profile_username", "category_1"]].values}
@@ -47,13 +39,13 @@ def main():
     K = 5
     skf = StratifiedKFold(n_splits=K)
     models_metrics, models_histories = defaultdict(dict), defaultdict(list)
-    for kth_fold, (train_idx, test_idx) in enumerate(skf.split(profiles.profile_username.values, profiles.category_1.values), start=1):
+    tracked_profiles = profiles[profiles.is_tracked == 1]
+    for kth_fold, (train_idx, test_idx) in enumerate(skf.split(tracked_profiles.profile_username.values, tracked_profiles.category_1.values), start=1):
         print("Starting {}th Fold".format(kth_fold))
 
         train_authors, test_authors = utils.get_authors(profiles, all_users, train_idx, test_idx)
         username_to_index = utils.get_users_indices(train_authors)
-        train_interactions = utils.get_interactions(comments[(comments.media_author.isin(train_authors)) 
-                                                        & (comments.commenter.isin(train_authors))], username_to_index)
+        train_interactions = utils.get_interactions(comments[comments.media_author.isin(train_authors)], username_to_index)
         x_train, y_train = utils.get_x(train_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, train_authors)
         assert len(x_train)==len(y_train), "Train Input and Output tensor do not have the same dimensions"
 
@@ -66,8 +58,7 @@ def main():
         models_histories = utils.update_histories(models_histories, histories)
 
         username_to_index = utils.get_users_indices(test_authors)
-        test_interactions = utils.get_interactions(comments[(comments.media_author.isin(test_authors)) 
-                                                        & (comments.commenter.isin(test_authors))], username_to_index)
+        test_interactions = utils.get_interactions(comments[comments.media_author.isin(test_authors)], username_to_index)
         x_test, y_test = utils.get_x(test_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, test_authors)
         assert len(x_test)==len(y_test), "Test Input and Output tensor do not have the same dimensions"
 
