@@ -21,9 +21,7 @@ class GCNModel(torch.nn.Module):
     def forward(self, x, edge_index, apply_activation=True):
         for layer in self.convs:
             x = F.relu(layer(x, edge_index))
-        x = self.output(x, edge_index)
-
-        return F.log_softmax(x, dim=1) if apply_activation else x
+        return F.log_softmax(self.output(x, edge_index), dim=1) if apply_activation else x
     
     def fit(self, data, epochs=10):
         self.train()

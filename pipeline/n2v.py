@@ -32,8 +32,8 @@ class Node2VecModel(torch.nn.Module):
                 
                 running_loss += loss.item()
             
-            print("---> ({}/{}) Running loss: {}".format(epoch+1, epochs, running_loss / len(subset)))
-            history.append(running_loss / len(subset))
+            print("---> ({}/{}) Running loss: {}".format(epoch+1, epochs, running_loss / len(data.x)))
+            history.append(running_loss / len(data.x))
 
         return history
 

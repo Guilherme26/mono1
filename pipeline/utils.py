@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
+from sklearn.metrics import classification_report
 from collections import defaultdict
 from sklearn.metrics import f1_score, accuracy_score
 from n2v import Node2VecModel
@@ -17,9 +18,9 @@ def get_interactions(df, username_to_index):
                 for author, commenter in df[['media_author', 'commenter']].drop_duplicates().values]
 
 
-def get_authors(df, all_users, train_idx, test_idx):
+def get_authors(df, train_idx, test_idx):
     test_users = df.iloc[test_idx].profile_username.values
-    train_users = list(all_users - set(test_users))
+    train_users = df.iloc[train_idx].profile_username.values
     return train_users, test_users
 
 
@@ -28,6 +29,7 @@ def get_edge_index(interactions):
     graph.add_edges_from(interactions)
     
     return torch.tensor(nx.to_pandas_edgelist(graph).values.T, dtype=torch.long)
+
 
 def get_x(authors, name_to_record, input_dim=6):
     x = [name_to_record.get(name, np.ones(input_dim)) for name in authors]
@@ -68,7 +70,7 @@ def test(data, models):
         y_pred = torch.argmax(model.forward(data.x, data.edge_index), dim=1).detach().numpy()
         y_true = data.y.detach().numpy()
         
-        print(f1_score(y_true, y_pred, average="macro"), set(y_true) - set(y_pred))
+        print(classification_report(y_true, y_pred))
         
         metrics_per_model[model.__class__.__name__] = {"Accuracy": float(accuracy_score(y_true, y_pred)), 
                                                        "F1 Macro": float(f1_score(y_true, y_pred, average="macro")),

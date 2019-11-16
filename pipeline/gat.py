@@ -21,8 +21,6 @@ class GATModel(torch.nn.Module):
         for layer in self.convs:
             x = F.dropout(x, p=0.2, training=self.training)
             x = F.relu(layer(x, edge_index))
-        x = self.output(x, edge_index)
-
         return F.log_softmax(x, dim=1) if apply_activation else x
     
     def fit(self, data, epochs=10):

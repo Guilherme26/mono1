@@ -21,8 +21,8 @@ def main():
     torch.manual_seed(0)
     np.random.seed(0)
 
-    profiles = pd.read_csv("../data/new_profiles.csv")
-    comments = pd.read_csv("../data/new_comments.csv")
+    profiles = pd.read_csv("../data/new_profiles_200t.csv")
+    comments = pd.read_csv("../data/new_comments_200t.csv")
 
     comments = comments.drop_duplicates()
     profiles = preprocessing.categorical_to_numerical(profiles, col="category_1")
@@ -40,7 +40,7 @@ def main():
     for kth_fold, (train_idx, test_idx) in enumerate(skf.split(profiles.profile_username.values, profiles.category_1.values), start=1):
         print("Starting {}th Fold".format(kth_fold))
 
-        train_authors, test_authors = utils.get_authors(profiles, all_users, train_idx, test_idx)
+        train_authors, test_authors = utils.get_authors(profiles, train_idx, test_idx)
         username_to_index = utils.get_users_indices(train_authors)
         train_interactions = utils.get_interactions(comments[(comments.media_author.isin(train_authors)) 
                                                         & (comments.commenter.isin(train_authors))], username_to_index)
@@ -72,8 +72,8 @@ def main():
     models_metrics = utils.calculate_statistics(models_metrics)
 
     if args.write_output:
-        utils.write_json("results/models_metrics_{}e_{}l_{}u.json".format(args.train_epochs, args.n_hidden_layers, args.n_hidden_units), models_metrics)
-        utils.write_json("results/models_histories_{}e_{}l_{}u.json".format(args.train_epochs, args.n_hidden_layers, args.n_hidden_units), models_histories)
+        utils.write_json("../data/results/models_metrics_{}e_{}l_{}u.json".format(args.train_epochs, args.n_hidden_layers, args.n_hidden_units), models_metrics)
+        utils.write_json("../data/results/models_histories_{}e_{}l_{}u.json".format(args.train_epochs, args.n_hidden_layers, args.n_hidden_units), models_histories)
 
 if __name__ == "__main__":
     main()
