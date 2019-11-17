@@ -1,2 +1,3 @@
 data/
 Proposal.pdf
+__pycache__/*
