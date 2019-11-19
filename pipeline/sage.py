@@ -27,7 +27,7 @@ class GraphSAGE(torch.nn.Module):
         history = []
         for epoch in range(epochs):
             outputs = self.forward(data.x, data.edge_index)
-            loss = self.loss(outputs, data.y)
+            loss = self.loss(outputs[data.train_mask], data.y[data.train_mask])
             loss.backward()
             
             self.optimizer.step()

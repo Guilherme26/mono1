@@ -40,29 +40,25 @@ def main():
     for kth_fold, (train_idx, test_idx) in enumerate(skf.split(profiles.profile_username.values, profiles.category_1.values), start=1):
         print("Starting {}th Fold".format(kth_fold))
 
-        train_authors, test_authors = utils.get_authors(profiles, train_idx, test_idx)
-        username_to_index = utils.get_users_indices(train_authors)
-        train_interactions = utils.get_interactions(comments[(comments.media_author.isin(train_authors)) 
-                                                        & (comments.commenter.isin(train_authors))], username_to_index)
-        x_train, y_train = utils.get_x(train_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, train_authors)
-        assert len(x_train)==len(y_train), "Train Input and Output tensor do not have the same dimensions"
+        authors = profiles.profile_username.values
+        username_to_index = utils.get_users_indices(authors)
+        interactions = utils.get_interactions(comments, username_to_index)
+        edge_index = utils.get_edge_index(interactions)
+        
+        x = utils.get_x(authors, name_to_record, input_dim=input_dim)
+        y = utils.get_y(user_to_label, authors)
 
-        edge_index = utils.get_edge_index(train_interactions)
+        train_mask = [True if i in train_idx else False for i in range(len(x))]
+        test_mask = [True if i in test_idx else False for i in range(len(x))]
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        data = Data(x=x_train, y=y_train, edge_index=edge_index).to(device)
+        data = Data(x=x, y=y, edge_index=edge_index, train_mask=train_mask, test_mask=test_mask).to(device)
+
+        assert len(x)==len(y), "Train Input and Output tensor do not have the same dimensions"
 
         models = utils.get_models(data.num_nodes, input_dim, output_dim, args.n_hidden_units, args.n_hidden_layers, device=device, lr=0.005)
         histories = utils.train(data, models, epochs=args.train_epochs)
         models_histories = utils.update_histories(models_histories, histories)
 
-        username_to_index = utils.get_users_indices(test_authors)
-        test_interactions = utils.get_interactions(comments[(comments.media_author.isin(test_authors)) 
-                                                        & (comments.commenter.isin(test_authors))], username_to_index)
-        x_test, y_test = utils.get_x(test_authors, name_to_record, input_dim=input_dim), utils.get_y(user_to_label, test_authors)
-        assert len(x_test)==len(y_test), "Test Input and Output tensor do not have the same dimensions"
-
-        edge_index = utils.get_edge_index(test_interactions)
-        data = Data(x=x_test, y=y_test, edge_index=edge_index).to(device)
         current_metrics = utils.test(data, models)
         utils.update_metrics_dict(models_metrics, current_metrics)
 
