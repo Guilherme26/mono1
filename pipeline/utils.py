@@ -67,16 +67,16 @@ def test(data, models):
     metrics_per_model = {}
     for model in models:
         model.eval()
-        y_pred = torch.argmax(model.forward(data.x, data.edge_index), dim=1)
-        y_pred = y_pred[data.test_mask].detach().numpy()
+        y_preds = model.forward(data.x, data.edge_index)
+        y_preds = torch.argmax(y_preds[data.test_mask], dim=1).detach().numpy()
         y_true = data.y[data.test_mask].detach().numpy()
         
-        # print(classification_report(y_true, y_pred))
-        print(f1_score(y_true, y_pred, average="macro"))
+        # print(classification_report(y_true, y_preds))
+        print(f1_score(y_true, y_preds, average="macro"))
         
-        metrics_per_model[model.__class__.__name__] = {"Accuracy": float(accuracy_score(y_true, y_pred)), 
-                                                       "F1 Macro": float(f1_score(y_true, y_pred, average="macro")),
-                                                       "F1 Micro": float(f1_score(y_true, y_pred, average="micro"))}
+        metrics_per_model[model.__class__.__name__] = {"Accuracy": float(accuracy_score(y_true, y_preds)), 
+                                                       "F1 Macro": float(f1_score(y_true, y_preds, average="macro")),
+                                                       "F1 Micro": float(f1_score(y_true, y_preds, average="micro"))}
 
     return metrics_per_model
 
